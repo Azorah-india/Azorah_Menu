@@ -7,6 +7,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Cinzel:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  /* Early gate: decide before the first paint so the splash cannot flash on revisits. */
+  (function () {
+    var root = document.documentElement;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var key = 'azorah:welcome-shown:v1:' + window.location.pathname;
+    var show = !reduceMotion;
+    try {
+      if (window.sessionStorage.getItem(key) === '1') show = false;
+      if (show) window.sessionStorage.setItem(key, '1');
+    } catch (error) {
+      /* Storage may be disabled in in-app or private browsers; the menu still works. */
+    }
+    if (show) root.classList.add('azorah-intro-active');
+  })();
+</script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -464,9 +480,147 @@
       height: 40px;
     }
   }
+
+  /* ── AZORAH first-entry welcome (static-hosting safe; existing menu is untouched) ── */
+  html.azorah-intro-active { background: #f5f0e8; }
+
+  #azorah-welcome {
+    display: none;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 10000;
+    overflow: hidden;
+    isolation: isolate;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse 75% 47% at 51% 78%, rgba(223,185,105,0.32) 0%, rgba(232,202,139,0.13) 48%, transparent 82%),
+      radial-gradient(ellipse 85% 65% at 48% 41%, #faf7f0 0%, #f5f0e8 74%, #f1ece5 100%);
+    opacity: 1;
+    transform: translate3d(0,0,0);
+    -webkit-transform: translate3d(0,0,0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html.azorah-intro-active #azorah-welcome { display: flex; }
+
+  .azorah-welcome-brand {
+    width: min(74vw, 350px);
+    min-height: 90px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate3d(0, 15px, 0) scale(0.975);
+    opacity: 0;
+    animation: azorah-welcome-arrive 1000ms cubic-bezier(.2,.72,.22,1) 120ms both;
+  }
+
+  .azorah-welcome-logo {
+    width: 100%;
+    max-height: 170px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    /* Recolour transparent brand artwork for contrast against cream. */
+    filter: brightness(0) saturate(100%) invert(32%) sepia(21%) saturate(990%) hue-rotate(320deg) brightness(96%) contrast(90%);
+  }
+
+  .azorah-welcome-brand.is-fallback .azorah-welcome-logo { display: none; }
+  .azorah-welcome-fallback {
+    display: none;
+    color: #915648;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: clamp(35px, 8vw, 58px);
+    font-weight: 400;
+    letter-spacing: .115em;
+    white-space: nowrap;
+  }
+  .azorah-welcome-brand.is-fallback .azorah-welcome-fallback { display: inline; }
+
+  .azorah-welcome-gleam {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 34%, rgba(255,250,231,.0) 44%, rgba(255,247,214,.36) 50%, transparent 58%);
+    mix-blend-mode: screen;
+    transform: translate3d(-130%, 0, 0);
+    animation: azorah-welcome-shimmer 1650ms ease-in-out 540ms both;
+  }
+
+  .azorah-welcome-skip {
+    position: absolute;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 11px 16px;
+    border: 0;
+    background: transparent;
+    color: #866f5c;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 10px;
+    letter-spacing: .17em;
+    text-transform: uppercase;
+    cursor: pointer;
+    opacity: .7;
+    touch-action: manipulation;
+  }
+  .azorah-welcome-skip:hover, .azorah-welcome-skip:focus-visible { opacity: 1; }
+  .azorah-welcome-skip:focus-visible { outline: 2px solid #9e7652; outline-offset: 4px; }
+
+  html.azorah-intro-active .page {
+    opacity: 0;
+    transform: translate3d(0, 15px, 0);
+    transition: opacity 580ms ease-out, transform 580ms cubic-bezier(.2,.7,.2,1);
+  }
+  html.azorah-intro-active.azorah-intro-leaving .page {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  html.azorah-intro-active.azorah-intro-leaving #azorah-welcome {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0);
+    pointer-events: none;
+    transition: opacity 540ms ease, transform 540ms ease;
+  }
+
+  @keyframes azorah-welcome-arrive {
+    from { opacity: 0; transform: translate3d(0, 15px, 0) scale(.975); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+  @keyframes azorah-welcome-shimmer {
+    0%, 13% { opacity: 0; transform: translate3d(-130%,0,0); }
+    39% { opacity: .75; }
+    76%, 100% { opacity: 0; transform: translate3d(130%,0,0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html.azorah-intro-active #azorah-welcome { display: none !important; }
+    html.azorah-intro-active .page { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .azorah-welcome-brand, .azorah-welcome-gleam { animation: none !important; }
+  }
+
 </style>
 </head>
 <body>
+
+<!-- Intro shown only on a first visit in this tab; the menu is already rendered beneath it. -->
+<div id="azorah-welcome" role="region" aria-label="AZORAH welcome">
+  <div class="azorah-welcome-brand" id="azorah-welcome-brand">
+    <img class="azorah-welcome-logo" id="azorah-welcome-logo"
+         src="assets/Azorah_Logo_Reference.png" alt="AZORAH" fetchpriority="high" decoding="async">
+    <span class="azorah-welcome-fallback" aria-hidden="true">AZORAH</span>
+    <span class="azorah-welcome-gleam" aria-hidden="true"></span>
+  </div>
+  <button id="azorah-welcome-skip" class="azorah-welcome-skip" type="button">Skip intro</button>
+</div>
+
+
 
 <!-- ── Background pattern ── -->
 <div class="bg-arch">
@@ -646,6 +800,77 @@
 
 </main>
 
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    if (!root.classList.contains('azorah-intro-active')) return;
+
+    var welcome = document.getElementById('azorah-welcome');
+    var main = document.querySelector('main.page');
+    var skip = document.getElementById('azorah-welcome-skip');
+    var brand = document.getElementById('azorah-welcome-brand');
+    var logo = document.getElementById('azorah-welcome-logo');
+    if (!welcome || !main || !skip) {
+      root.classList.remove('azorah-intro-active');
+      return;
+    }
+
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var completed = false;
+    var startTimer;
+    var endTimer;
+    main.inert = true;
+
+    function handleKeydown(event) {
+      if (event.key === 'Escape') finish();
+    }
+    function cleanup() {
+      clearTimeout(startTimer);
+      clearTimeout(endTimer);
+      main.inert = false;
+      root.classList.remove('azorah-intro-leaving', 'azorah-intro-active');
+      if (welcome.parentNode) welcome.parentNode.removeChild(welcome);
+      document.removeEventListener('keydown', handleKeydown);
+      window.removeEventListener('pagehide', cleanup);
+      if (reducedMotion.removeEventListener) reducedMotion.removeEventListener('change', onMotionChange);
+    }
+    function finish(immediately) {
+      if (completed) return;
+      completed = true;
+      clearTimeout(startTimer);
+      if (immediately || reducedMotion.matches) {
+        cleanup();
+        return;
+      }
+      main.inert = false;
+      root.classList.add('azorah-intro-leaving');
+      // Transitionend is not guaranteed in background tabs. Always clean up.
+      endTimer = window.setTimeout(cleanup, 610);
+    }
+    function onMotionChange(event) {
+      if (event.matches) finish(true);
+    }
+    function showFallback() {
+      if (brand) brand.classList.add('is-fallback');
+    }
+
+    if (logo) {
+      logo.addEventListener('error', showFallback, { once: true });
+      if (logo.complete && !logo.naturalWidth) showFallback();
+    }
+
+    skip.addEventListener('click', function () { finish(); });
+    welcome.addEventListener('pointerdown', function (event) {
+      if (event.target !== skip) finish();
+    });
+    document.addEventListener('keydown', handleKeydown);
+    window.addEventListener('pagehide', cleanup);
+    if (reducedMotion.addEventListener) reducedMotion.addEventListener('change', onMotionChange);
+    // 2.05s holding time + 0.54s exit = approx. 2.6 seconds total.
+    startTimer = window.setTimeout(finish, 2050);
+  })();
+</script>
+
 </body>
 </html>
-

@@ -8,19 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Cinzel:wght@400;500&display=swap" rel="stylesheet">
 <script>
-  /* Early gate: decide before the first paint so the splash cannot flash on revisits. */
+  /* Show the welcome on every new menu entry, including refreshes and repeat visits.
+     Install the class before first paint to avoid a flash of the menu beneath it. */
   (function () {
-    var root = document.documentElement;
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var key = 'azorah:welcome-shown:v1:' + window.location.pathname;
-    var show = !reduceMotion;
-    try {
-      if (window.sessionStorage.getItem(key) === '1') show = false;
-      if (show) window.sessionStorage.setItem(key, '1');
-    } catch (error) {
-      /* Storage may be disabled in in-app or private browsers; the menu still works. */
-    }
-    if (show) root.classList.add('azorah-intro-active');
+    if (!reduceMotion) document.documentElement.classList.add('azorah-intro-active');
   })();
 </script>
 <style>
@@ -193,12 +185,11 @@
     text-decoration: none;
     min-height: 118px;
     padding: 26px 28px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background:
-      linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015)),
-      rgba(16,9,8,0.52);
-    box-shadow: 0 18px 42px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+    /* One continuous, fine gold border — no doubled inset or corner brackets. */
+    border: 1px solid rgba(213, 175, 107, 0.46);
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(47, 28, 28, 0.97), rgba(28, 19, 20, 0.97));
+    box-shadow: 0 12px 32px rgba(0,0,0,0.23), inset 0 1px 0 rgba(255,244,222,0.035);
     overflow: hidden;
     cursor: pointer;
     transition: border-color 0.4s ease, background 0.4s ease, transform 0.35s ease, box-shadow 0.35s ease;
@@ -222,27 +213,22 @@
     transition: opacity 0.4s ease;
   }
 
-  .menu-card::after {
-    content: '';
-    position: absolute;
-    inset: 7px;
-    border: 1px solid rgba(229,201,143,0.12);
-    border-radius: 6px;
-    pointer-events: none;
+
+  /* Apply lift only to actual hover devices; mobile taps must not leave a stuck border. */
+  @media (hover: hover) and (pointer: fine) {
+    .menu-card:hover {
+      border-color: rgba(235, 204, 148, 0.86);
+      box-shadow: 0 19px 42px rgba(0,0,0,0.29), inset 0 1px 0 rgba(255,244,222,0.045);
+      transform: translateY(-2px);
+    }
+    .menu-card:hover::before { opacity: 1; }
   }
-
-  .menu-card:hover {
-    border-color: rgba(229,201,143,0.7);
-    background:
-      linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.02)),
-      rgba(42,15,21,0.62);
-    box-shadow: 0 24px 52px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
-    transform: translateY(-2px);
+  .menu-card:focus-visible {
+    border-color: var(--gold-soft);
+    outline: 2px solid rgba(229,201,143,.65);
+    outline-offset: 4px;
   }
-
-  .menu-card:hover::before { opacity: 1; }
-
-  .menu-card:active { transform: scale(0.985); }
+  .menu-card:active { transform: scale(0.99); }
 
   .card-left {
     display: flex;
@@ -310,18 +296,6 @@
     transform: translateX(2px);
   }
 
-  /* corner accents */
-  .card-corner {
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    border-color: rgba(202,165,92,0.55);
-    border-style: solid;
-    transition: border-color 0.4s ease;
-  }
-  .card-corner.tl { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
-  .card-corner.br { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
-  .menu-card:hover .card-corner { border-color: var(--gold-soft); }
 
   /* ── Social Links ── */
   .social-section {
@@ -481,7 +455,7 @@
     }
   }
 
-  /* ── AZORAH first-entry welcome (static-hosting safe; existing menu is untouched) ── */
+  /* ── AZORAH welcome on every menu entry (static-hosting safe) ── */
   html.azorah-intro-active { background: #f5f0e8; }
 
   #azorah-welcome {
@@ -518,6 +492,8 @@
     justify-content: center;
     transform: translate3d(0, 15px, 0) scale(0.975);
     opacity: 0;
+  }
+  html.azorah-intro-active .azorah-welcome-brand {
     animation: azorah-welcome-arrive 1000ms cubic-bezier(.2,.72,.22,1) 120ms both;
   }
 
@@ -550,6 +526,8 @@
     background: linear-gradient(105deg, transparent 34%, rgba(255,250,231,.0) 44%, rgba(255,247,214,.36) 50%, transparent 58%);
     mix-blend-mode: screen;
     transform: translate3d(-130%, 0, 0);
+  }
+  html.azorah-intro-active .azorah-welcome-gleam {
     animation: azorah-welcome-shimmer 1650ms ease-in-out 540ms both;
   }
 
@@ -609,7 +587,7 @@
 </head>
 <body>
 
-<!-- Intro shown only on a first visit in this tab; the menu is already rendered beneath it. -->
+<!-- Intro replays on every page entry; the unchanged menu is already rendered beneath it. -->
 <div id="azorah-welcome" role="region" aria-label="AZORAH welcome">
   <div class="azorah-welcome-brand" id="azorah-welcome-brand">
     <img class="azorah-welcome-logo" id="azorah-welcome-logo"
@@ -683,8 +661,6 @@
 
     <!-- Brunch Menu -->
     <a class="menu-card" href="menus/Azorah_Brunch.pdf" target="_blank" rel="noopener">
-      <div class="card-corner tl"></div>
-      <div class="card-corner br"></div>
       <div class="card-shimmer"></div>
       <div class="card-left">
         <span class="card-label">Indulge</span>
@@ -700,8 +676,6 @@
 
     <!-- Food Menu -->
     <a class="menu-card" href="menus/Azorah_Food.pdf" target="_blank" rel="noopener">
-      <div class="card-corner tl"></div>
-      <div class="card-corner br"></div>
       <div class="card-shimmer"></div>
       <div class="card-left">
         <span class="card-label">Discover</span>
@@ -718,8 +692,6 @@
 
     <!-- Non-Alcoholic Beverage Menu -->
     <a class="menu-card" href="menus/Azorah_Non_Alcoholic_Beverages.pdf" target="_blank" rel="noopener">
-      <div class="card-corner tl"></div>
-      <div class="card-corner br"></div>
       <div class="card-shimmer"></div>
       <div class="card-left">
         <span class="card-label">Sip</span>
@@ -737,8 +709,6 @@
 
     <!-- Cocktail Menu -->
     <a class="menu-card" href="menus/Azorah_Drinks.pdf" target="_blank" rel="noopener">
-      <div class="card-corner tl"></div>
-      <div class="card-corner br"></div>
       <div class="card-shimmer"></div>
       <div class="card-left">
         <span class="card-label">Explore</span>
@@ -804,8 +774,6 @@
 <script>
   (function () {
     var root = document.documentElement;
-    if (!root.classList.contains('azorah-intro-active')) return;
-
     var welcome = document.getElementById('azorah-welcome');
     var main = document.querySelector('main.page');
     var skip = document.getElementById('azorah-welcome-skip');
@@ -816,46 +784,61 @@
       return;
     }
 
-    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    var completed = false;
+    var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+    var completed = true;
     var startTimer;
     var endTimer;
-    main.inert = true;
 
-    function handleKeydown(event) {
-      if (event.key === 'Escape') finish();
-    }
     function cleanup() {
       clearTimeout(startTimer);
       clearTimeout(endTimer);
       main.inert = false;
+      completed = true;
       root.classList.remove('azorah-intro-leaving', 'azorah-intro-active');
-      if (welcome.parentNode) welcome.parentNode.removeChild(welcome);
-      document.removeEventListener('keydown', handleKeydown);
-      window.removeEventListener('pagehide', cleanup);
-      if (reducedMotion.removeEventListener) reducedMotion.removeEventListener('change', onMotionChange);
+      // Keep the hidden overlay in the DOM so browser Back/Forward Cache entries can replay it.
     }
+
     function finish(immediately) {
       if (completed) return;
       completed = true;
       clearTimeout(startTimer);
-      if (immediately || reducedMotion.matches) {
+      if (immediately || (reducedMotion && reducedMotion.matches)) {
         cleanup();
         return;
       }
       main.inert = false;
       root.classList.add('azorah-intro-leaving');
-      // Transitionend is not guaranteed in background tabs. Always clean up.
+      // A timeout guarantees access even when transitionend does not fire.
       endTimer = window.setTimeout(cleanup, 610);
     }
+
+    function play() {
+      clearTimeout(startTimer);
+      clearTimeout(endTimer);
+      if (reducedMotion && reducedMotion.matches) {
+        cleanup();
+        return;
+      }
+      completed = false;
+      root.classList.remove('azorah-intro-leaving');
+      // On normal loads the early head script already activated it before first paint.
+      // On a bfcache restore, toggling active restarts the logo and shimmer animations.
+      if (!root.classList.contains('azorah-intro-active')) {
+        root.classList.add('azorah-intro-active');
+      }
+      main.inert = true;
+      // 2.05s display + 0.54s exit = approximately 2.6 seconds total.
+      startTimer = window.setTimeout(finish, 2050);
+    }
+
     function onMotionChange(event) {
       if (event.matches) finish(true);
     }
-    function showFallback() {
-      if (brand) brand.classList.add('is-fallback');
-    }
 
     if (logo) {
+      function showFallback() {
+        if (brand) brand.classList.add('is-fallback');
+      }
       logo.addEventListener('error', showFallback, { once: true });
       if (logo.complete && !logo.naturalWidth) showFallback();
     }
@@ -864,11 +847,18 @@
     welcome.addEventListener('pointerdown', function (event) {
       if (event.target !== skip) finish();
     });
-    document.addEventListener('keydown', handleKeydown);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') finish();
+    });
     window.addEventListener('pagehide', cleanup);
-    if (reducedMotion.addEventListener) reducedMotion.addEventListener('change', onMotionChange);
-    // 2.05s holding time + 0.54s exit = approx. 2.6 seconds total.
-    startTimer = window.setTimeout(finish, 2050);
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted) play(); // Returning to this menu via browser Back / Forward.
+    });
+    if (reducedMotion && reducedMotion.addEventListener) {
+      reducedMotion.addEventListener('change', onMotionChange);
+    }
+
+    if (root.classList.contains('azorah-intro-active')) play();
   })();
 </script>
 
